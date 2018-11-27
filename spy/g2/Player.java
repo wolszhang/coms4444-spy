@@ -30,8 +30,9 @@ public class Player implements spy.sim.Player {
     private boolean routeFound;
     private Point start;
     private Point destination;
-    private List<Point> Friend;
+    private List<Integer> friend;  
     private HashMap<Integer, Integer> Met;
+    private HashMap<Integer, Point> friendtoPoint;  
 
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
@@ -76,8 +77,10 @@ public class Player implements spy.sim.Player {
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+        friend = new ArrayList<Integer>();
+        friendtoPoint = new HashMap<Integer, Point>();
+
         this.loc = loc;
-        this.Friend = new ArrayList<Point>();
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
@@ -113,7 +116,8 @@ public class Player implements spy.sim.Player {
                         continue;
                     }
                     if (Met.get(i) == 0){
-                        Friend.add(p);
+                        friend.add(i);
+                        friendtoPoint.put(i, p); 
                         System.out.println("We just saw a soldier we want to move towards: " + i); 
                     }
                     else{
@@ -126,7 +130,7 @@ public class Player implements spy.sim.Player {
             // map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
         }
 
-        System.out.println("Here is the current list of soldiers: " + Friend); 
+        System.out.println("Here is the current list of soldiers: " + friend); 
     }
     
     public List<Record> sendRecords(int id)
@@ -206,12 +210,17 @@ public class Player implements spy.sim.Player {
             }
         }
 
-        if (Friend.size() != 0){
+        if (friend.size() != 0){
             System.out.println("Moving towards friend");
-            Point p = Friend.remove(0);
-
-            System.out.printf("at %d %d \n", p.x, p.y);
-            return move_toward(p);
+            int friendId = friend.remove(0);
+            Point p = friendtoPoint.get(friendId); 
+            if(friendId < this.id){ 
+            //     System.out.printf("at %d %d \n", p.x, p.y);
+                return move_toward(p);
+            }
+            else{
+                return null; 
+            }
         }
 
         if (!readyForRoute && (loc.equals(package_loc) || loc.equals(target_loc))) {
