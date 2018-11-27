@@ -69,7 +69,7 @@ public class Player implements spy.sim.Player {
         this.destination = null;
         this.Met = new HashMap<Integer,Integer>();
         for (int i=0; i<n; i++){
-            Met.put(i,0);
+            Met.put(i,15);
         }
 
     }
@@ -112,15 +112,21 @@ public class Player implements spy.sim.Player {
                     if (i== this.id){
                         continue;
                     }
-                    if (Met.get(i) < 15){
+                    if (Met.get(i) == 0){
                         Friend.add(p);
-                        break;
+                        System.out.println("We just saw a soldier we want to move towards: " + i); 
+                    }
+                    else{
+                        Met.replace(i, Met.get(i) -1); 
+                        System.out.println("Just decremented soldier " + i + "'s number to: "+ Met.get(i)); 
                     }
                 }
             }
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
             // map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
         }
+
+        System.out.println("Here is the current list of soldiers: " + Friend); 
     }
     
     public List<Record> sendRecords(int id)
