@@ -32,12 +32,16 @@ public class Player implements spy.sim.Player {
 
     private Point package_loc;
     private Point target_loc;
-    
+    private List<Point> route;
+    private boolean readyForRoute;
+    private boolean routeFound;
+    private Point start;
+    private Point destination;
+    private List<Integer> friend;  
+    private HashMap<Integer, Integer> Met;
+    private HashMap<Integer, Point> friendtoPoint;  
     private boolean[][] viewed;
     private int[][] graph;
-
-    private List<Point> Friend;
-    private HashMap<Integer, Integer> Met;
     private List<Point> todo;
 
 
@@ -81,12 +85,15 @@ public class Player implements spy.sim.Player {
         this.Met = new HashMap<Integer,Integer>();
         this.Friend = new ArrayList<Point>();
         for (int i=0; i<n; i++){
-            Met.put(i,0);
+            Met.put(i,15);
         }
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+        friend = new ArrayList<Integer>();
+        friendtoPoint = new HashMap<Integer, Point>();
+
         this.loc = loc;
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
@@ -127,14 +134,21 @@ public class Player implements spy.sim.Player {
                     if (i == this.id){
                         continue;
                     }
-                    if (Met.get(i) < 15){
-                        Friend.add(p);
-                        break;
+                    if (Met.get(i) == 0){
+                        friend.add(i);
+                        friendtoPoint.put(i, p); 
+                        System.out.println("We just saw a soldier we want to move towards: " + i); 
+                    }
+                    else{
+                        Met.replace(i, Met.get(i) -1); 
+                        System.out.println("Just decremented soldier " + i + "'s number to: "+ Met.get(i)); 
                     }
                 }
             }
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
         }
+
+        System.out.println("Here is the current list of soldiers: " + friend); 
     }
     
     public List<Record> sendRecords(int id)
@@ -254,12 +268,18 @@ public class Player implements spy.sim.Player {
                 return new Point(0,0);
             }
         }
-        
-        if (Friend.size() != 0 && move_possible(Friend.get(0))){
+
+        if (friend.size() != 0){
             System.out.println("Moving towards friend");
-            Point p = Friend.remove(0);
-            System.out.printf("at %d %d \n", p.x, p.y);
-            return move_toward(p, possible_move);
+            int friendId = friend.remove(0);
+            Point p = friendtoPoint.get(friendId); 
+            if(friendId < this.id){ 
+            //     System.out.printf("at %d %d \n", p.x, p.y);
+                return move_toward(p);
+            }
+            else{
+                return null; 
+            }
         }
         
         if (!readyForRoute && (loc.equals(package_loc) || loc.equals(target_loc))) {
@@ -290,7 +310,8 @@ public class Player implements spy.sim.Player {
             // System.out.println("x = " + this.loc.x + ", y = " + this.loc.y);
             return next;
         }
-
+        /*
+        */
         if (package_loc != null && !loc.equals(package_loc) && move_possible(package_loc)){
             System.out.println("moving toward package");
             // return move_toward(package_loc);
@@ -299,9 +320,11 @@ public class Player implements spy.sim.Player {
             return next;
         }
 
+      /*
         if (target_loc != null && !loc.equals(target_loc)) {
             return move_toward(target_loc);
         }
+   
         */
         return explore();
     }
