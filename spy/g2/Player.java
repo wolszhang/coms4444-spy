@@ -115,14 +115,11 @@ public class Player implements spy.sim.Player {
             }
             
             if (status.getPT() == 1){
-                System.out.printf("%d Package Found\n",id);
                 this.package_found = true;
                 this.package_loc = p;
                 graph[p.x][p.y] = 1;
             }
             else if (status.getPT() == 2) {
-
-                System.out.printf("%d Target Found\n",id);
                 this.target_found = true;
                 this.target_loc = p; 
                 graph[p.x][p.y] = 1;
@@ -146,7 +143,6 @@ public class Player implements spy.sim.Player {
                             Met.put(i, 30);
                         }
                         else{
-                            System.out.printf("%d moving toward %d",this.id, i);
                             move_toward(p);
                             Met.put(i,30);
                             break;
@@ -223,14 +219,29 @@ public class Player implements spy.sim.Player {
     }
     
     public List<Point> proposePath(){
+        if (isSpy){
+            if (target_found){
+                return find_fake_path(package_loc, target_loc);
+            }
+            else{
+                return find_fake_path(package_loc, new Point(99,99));
+            }
+        }
         return path;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths){
         List<Integer> votes = new ArrayList<Integer>();
-        for (Integer p: paths.keySet()){
-            votes.add(p);
+        if (isSpy){
+            votes.add(this.id);
             return votes;
+        }
+
+        for (Integer p: paths.keySet()){
+            if (validate(paths.get(p))){
+                votes.add(p);
+                return votes;
+            }
         }
         return votes;
     }
@@ -265,27 +276,31 @@ public class Player implements spy.sim.Player {
             return move_to(todo.remove(todo.size()-1));
         }
 
-        if (package_found && target_found){
-            if (path_found && loc.x == package_loc.x && loc.y == package_loc.y){
-                System.out.printf("%d is waiting \n",id);
+        if (isSpy && package_found){
+            if (loc.x == package_loc.x && loc.y == package_loc.y){
                 return new Point(0,0);
             }
-            else if (dfs(package_loc, target_loc) != null){
-                path = dfs(package_loc,target_loc);
-                path_found = true;
+            else{
                 move_toward(package_loc);
-                System.out.printf("%d moving towards package at %d %d\n",id,package_loc.x,package_loc.y);
-                for (Point p: todo){
-                    System.out.printf("%d %d\n",p.x,p.y);
+            }
+        }
+        else{
+            if (package_found && target_found){
+                if (path_found && loc.x == package_loc.x && loc.y == package_loc.y){
+                    return new Point(0,0);
                 }
-                System.out.println("-----------------------");
+                else if (dfs(package_loc, target_loc) != null){
+                    path = dfs(package_loc,target_loc);
+                    path_found = true;
+                    move_toward(package_loc);
+                }
+                else{
+                    explore();
+                }
             }
             else{
                 explore();
             }
-        }
-        else{
-            explore();
         }
         if (todo.size()>0){
             return move_to(todo.remove(todo.size()-1));
@@ -386,16 +401,6 @@ public class Player implements spy.sim.Player {
             Pair pa = pQueue.poll();
             Point p = pa.pt;
             int dist = pa.dist;
-            /*
-            System.out.printf("%d %d\n",p.x, p.y);
-            for (int i=0; i<100;++i){
-                for (int j=0; j<100;++j){
-                    if (visited[i][j]==1)
-                        System.out.printf("%d %d\n",i,j);
-                }
-            }
-            System.out.printf("=============================\n");
-            */
             visited[p.x][p.y] = 1;
             for (Point n: neighbors(p)){
                 if (visited[n.x][n.y] == 1 || graph[n.x][n.y] == -2){
@@ -439,7 +444,7 @@ public class Player implements spy.sim.Player {
         return false;
     }
 
-    public List<Point> find_path(Point start, Point dest){
+    public List<Point> find_fake_path(Point start, Point dest){
         List<Point> path = new ArrayList<Point>();
         Map<Point, Point> par = new HashMap<Point, Point>();
         int[][] visited = new int[100][100];
@@ -453,19 +458,8 @@ public class Player implements spy.sim.Player {
             Point p = pa.pt;
             int dist = pa.dist;
             visited[p.x][p.y] = 1;
-            /*
-            System.out.printf("%d %d\n",p.x, p.y);
-            for (int i=0; i<100; i++){
-                for (int h=0; h<100; h++){
-                    if (visited[i][h]==1){
-                        System.out.printf("%d %d\n",i,h);
-                    }
-                }
-            }
-            System.out.printf("=================================\n");
-            */
             for (Point n: neighbors(p)){
-                if (graph[n.x][n.y] < 0 || visited[n.x][n.y] == 1){
+                if (graph[n.x][n.y] == -2 || visited[n.x][n.y] == 1){
                     continue;
                 }
                 if (n.x == dest.x && n.y == dest.y){
@@ -477,14 +471,12 @@ public class Player implements spy.sim.Player {
                 visited[n.x][n.y] = 1;
             }
         }
-        //System.out.printf("From %d %d to %d %d \n", package_loc.x, package_loc.y, target_loc.x, target_loc.y);
         while (par.containsKey(cur)){
             path.add(new Point(cur.x, cur.y));
             cur = par.get(cur);
         }
         path.add(cur);
         Collections.reverse(path);
-        
         return path;
     }
 
@@ -519,6 +511,25 @@ public class Player implements spy.sim.Player {
         }
         dst += 2*(dx+dy);
         return dst;
+    }
+
+    public boolean validate(List<Point> lp){
+        if (!package_found){
+            return true;
+        }
+        if (!target_found){
+            return true;
+        }
+        Point prev = package_loc;
+        for (Point p:lp){
+            if (Math.abs(p.x - prev.x)<=1 && Math.abs(p.y - prev.y)<=1 && graph[p.x][p.y]>=0){
+                prev = p;
+            }
+            else{
+                return false;
+            }
+        }
+        return true;
     }
 
     private List<Point> dfs(Point s, Point t) {

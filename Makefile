@@ -6,4 +6,3 @@ compile:
 
 clean:
 	rm spy/*/*.class
-
