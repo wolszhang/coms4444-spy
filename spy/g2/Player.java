@@ -19,7 +19,7 @@ public class Player implements spy.sim.Player {
             return new Integer(dist).compareTo(other.dist);
         }
     }
-
+    private boolean isSpy = false;
     private ArrayList<ArrayList<Record>> records;
     private int id;
     private Point loc;
@@ -53,6 +53,7 @@ public class Player implements spy.sim.Player {
             }
             this.records.add(row);
         }
+        this.isSpy = isSpy;
 
         this.graph = new int[100][100];
         this.viewed = new boolean[100][100];
@@ -142,10 +143,12 @@ public class Player implements spy.sim.Player {
                             todo.add(0,new Point(0,0));
                             todo.add(0,new Point(0,0));
                             todo.add(0,new Point(0,0));
+                            Met.put(i, 30);
                         }
                         else{
                             System.out.printf("%d moving toward %d",this.id, i);
                             move_toward(p);
+                            Met.put(i,30);
                             break;
                         }
                     }
@@ -157,7 +160,10 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
-        if (Met.get(id) > 0){
+        if (Met.get(id) > 30){
+            return new ArrayList<Record>();
+        }
+        if (isSpy){
             return new ArrayList<Record>();
         }
         ArrayList<Record> toSend = new ArrayList<Record>();
@@ -171,7 +177,7 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
-        Met.put(id,30);
+        Met.put(id,3000);
         return toSend;
     }
 
@@ -249,9 +255,12 @@ public class Player implements spy.sim.Player {
             }
         }
         System.out.printf("remaining cells: %d \n", ct);
-        
         */
-        
+        for (int i: Met.keySet()){
+            if (Met.get(i)>0){
+                Met.put(i,Met.get(i)-1);
+            }
+        }
         if (todo.size() > 0){
             return move_to(todo.remove(todo.size()-1));
         }
