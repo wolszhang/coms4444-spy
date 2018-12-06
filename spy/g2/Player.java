@@ -224,7 +224,7 @@ public class Player implements spy.sim.Player {
                 return find_fake_path(package_loc, target_loc);
             }
             else{
-                return find_fake_path(package_loc, new Point(99,99));
+                return find_fake_path(package_loc, new Point(99 - package_loc.x, 99 - package_loc.y));
             }
         }
         return path;
@@ -445,6 +445,7 @@ public class Player implements spy.sim.Player {
     }
 
     public List<Point> find_fake_path(Point start, Point dest){
+        // System.out.println("fake path");
         List<Point> path = new ArrayList<Point>();
         Map<Point, Point> par = new HashMap<Point, Point>();
         int[][] visited = new int[100][100];
@@ -477,6 +478,10 @@ public class Player implements spy.sim.Player {
         }
         path.add(cur);
         Collections.reverse(path);
+        // for (Point p: path) {
+        //     System.out.println("x = " + p.x + ", y = " + p.y);
+        // }
+        // System.out.println("fake path complete");
         return path;
     }
 
@@ -587,7 +592,7 @@ public class Player implements spy.sim.Player {
             v[next.x][next.y] = true;
         }
 
-        System.out.println("while loop ended");
+        // System.out.println("while loop ended");
 
         if (!prev.containsKey(t)) {
             return null;
@@ -595,11 +600,11 @@ public class Player implements spy.sim.Player {
 
         Point p = t;
         proposal.add(p);
-        System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
+        // System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
         while (prev.containsKey(p)) {
             p = prev.get(p);
             proposal.add(p);
-            System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
+            // System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
         }
 
         if (proposal.get(0).equals(target_loc)) {
